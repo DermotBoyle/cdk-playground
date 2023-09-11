@@ -1,12 +1,13 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { aws_s3 as s3, aws_lambda_nodejs as lambda } from 'aws-cdk-lib';
+import { aws_s3 as s3, aws_lambda_nodejs as lambda, aws_cloudfront as cloudFront } from 'aws-cdk-lib';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import * as apiGatewayV2 from '@aws-cdk/aws-apigatewayv2-alpha'
 import * as apiGatewayV2Integrations from '@aws-cdk/aws-apigatewayv2-integrations-alpha'
 import * as path from 'path';
+import { BlockPublicAccess, BucketAccessControl } from 'aws-cdk-lib/aws-s3';
 
 export class CdkDemoStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -16,6 +17,18 @@ export class CdkDemoStack extends cdk.Stack {
       versioned: true,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       encryption: s3.BucketEncryption.S3_MANAGED,
+    });
+
+    const websiteBucket = new s3.Bucket(this, 'CdkDemoWebsiteBucket', {
+      websiteIndexDocument: 'index.html',
+      publicReadAccess: true,
+      blockPublicAccess: BlockPublicAccess.BLOCK_ACLS,
+      accessControl: BucketAccessControl.BUCKET_OWNER_FULL_CONTROL
+    });
+
+    new BucketDeployment(this, 'CdkDemoWebsiteBucketDeployment', {
+      sources: [ Source.asset(path.join(__dirname, '..', 'demo-app', 'build')) ],
+      destinationBucket: websiteBucket,
     });
 
     const bucketPolicy = new PolicyStatement({
@@ -28,6 +41,17 @@ export class CdkDemoStack extends cdk.Stack {
     new BucketDeployment(this, 'CdkDemoBucketDeployment', {
       sources: [ Source.asset(path.join(__dirname, '..', 'assets')) ],
       destinationBucket: bucket,
+    });
+
+    const cloudFrontDist = new cloudFront.CloudFrontWebDistribution(this, 'CdkDemoCloudFrontDist', {
+      originConfigs: [
+        {
+          s3OriginSource: {
+            s3BucketSource: websiteBucket,
+          },
+          behaviors: [ { isDefaultBehavior: true } ],
+        },
+      ],
     });
 
 
@@ -71,6 +95,18 @@ export class CdkDemoStack extends cdk.Stack {
       value: httpApi.url!,
       description: 'Demo HTTP API Endpoint',
       exportName: 'CdkDemoHttpApiUrl',
+    });
+
+    new cdk.CfnOutput(this, 'CdkDemoWebsiteBucketOutput', {
+      value: websiteBucket.bucketName,
+      description: 'The name of the website bucket',
+      exportName: 'CdkDemoWebsiteBucketName',
+    });
+
+    new cdk.CfnOutput(this, 'CdkDemoCloudFrontDistOutput', {
+      value: cloudFrontDist.distributionDomainName,
+      description: 'The domain name of the CloudFront distribution',
+      exportName: 'CdkDemoCloudFrontDistDomainName',
     });
 
   }
