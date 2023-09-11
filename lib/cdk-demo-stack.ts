@@ -4,8 +4,9 @@ import { aws_s3 as s3, aws_lambda_nodejs as lambda } from 'aws-cdk-lib';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import * as apiGatewayV2 from '@aws-cdk/aws-apigatewayv2-alpha'
+import * as apiGatewayV2Integrations from '@aws-cdk/aws-apigatewayv2-integrations-alpha'
 import * as path from 'path';
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 export class CdkDemoStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -39,12 +40,38 @@ export class CdkDemoStack extends cdk.Stack {
       runtime: Runtime.NODEJS_18_X,
     });
 
+    const lambdaIntegration = new apiGatewayV2Integrations.HttpLambdaIntegration(
+      'CdkDemoLambdaIntegration',
+      lambdaFunc,
+    );
+
     lambdaFunc.addToRolePolicy(bucketPolicy);
+
+    const httpApi = new apiGatewayV2.HttpApi(this, 'CdkDemoHttpApi', {
+      corsPreflight: {
+        allowOrigins: [ '*' ],
+        allowMethods: [ apiGatewayV2.CorsHttpMethod.GET ],
+        maxAge: cdk.Duration.days(10),
+      },
+    });
+
+    httpApi.addRoutes({
+      path: '/getAllPhotos',
+      methods: [ apiGatewayV2.HttpMethod.GET ],
+      integration: lambdaIntegration,
+    });
 
     new cdk.CfnOutput(this, 'CdkDemoBucketOutput', {
       value: bucket.bucketName,
       description: 'The name of an S3 bucket',
       exportName: 'CdkDemoBucketName',
     });
+
+    new cdk.CfnOutput(this, 'CdkDemoHttpApiOutput', {
+      value: httpApi.url!,
+      description: 'Demo HTTP API Endpoint',
+      exportName: 'CdkDemoHttpApiUrl',
+    });
+
   }
 }

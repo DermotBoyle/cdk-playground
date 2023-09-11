@@ -8,7 +8,7 @@ function generateUrl(asset: S3.Object) {
 	return s3.getSignedUrl('getObject', {
 		Bucket: photoBucketName,
 		Key: asset.Key,
-		Expires: 24 * 60 * 60,
+		Expires: 24 * 60 * 60, // 24 hours access to the bucket asset
 	})
 }
 
