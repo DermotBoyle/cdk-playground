@@ -1,0 +1,14 @@
+.app {
+  height: 100vh;
+  width: 100vw;
+}
+
+.photoContainer {
+  height: 12rem;
+  width: 12rem;
+
+  > img {
+    height: 100%;
+    width: 100%;
+  }
+}

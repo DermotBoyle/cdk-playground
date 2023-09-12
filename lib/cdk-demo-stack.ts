@@ -33,11 +33,6 @@ export class CdkDemoStack extends cdk.Stack {
 
     websiteBucket.grantRead(oia);
 
-    new BucketDeployment(this, 'CdkDemoWebsiteBucketDeployment', {
-      sources: [ Source.asset(path.join(__dirname, '..', 'demo-app', 'build')) ],
-      destinationBucket: websiteBucket,
-    });
-
     const bucketPolicy = new PolicyStatement({
       effect: Effect.ALLOW,
       actions: [ 's3:ListBucket', 's3:GetObject', 's3:PutObject' ],
@@ -60,6 +55,12 @@ export class CdkDemoStack extends cdk.Stack {
           behaviors: [ { isDefaultBehavior: true } ],
         },
       ],
+    });
+
+    new BucketDeployment(this, 'CdkDemoWebsiteBucketDeployment', {
+      sources: [ Source.asset(path.join(__dirname, '..', 'demo-app', 'build')) ],
+      destinationBucket: websiteBucket,
+      distribution: cloudFrontDist, // on deploy this will invalidate the CloudFront cache
     });
 
 
