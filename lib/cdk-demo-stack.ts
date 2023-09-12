@@ -23,7 +23,8 @@ export class CdkDemoStack extends cdk.Stack {
     const websiteBucket = new s3.Bucket(this, 'CdkDemoWebsiteBucket', {
       websiteIndexDocument: 'index.html',
       publicReadAccess: true,
-      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+      blockPublicAccess: BlockPublicAccess.BLOCK_ACLS,
+      accessControl: BucketAccessControl.BUCKET_OWNER_FULL_CONTROL
     });
 
     const oia = new OriginAccessIdentity(this, 'CdkDemoOriginAccessIdentity', {
