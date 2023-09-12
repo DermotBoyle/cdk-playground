@@ -14,8 +14,6 @@ function generateUrl(asset: S3.Object) {
 
 export const handler = async (event: APIGatewayProxyEventV2, context: Context): Promise<APIGatewayProxyResultV2> => {
 
-	console.log('event', photoBucketName)
-
 	try {
 		const results = await s3.listObjectsV2({
 			Bucket: photoBucketName,

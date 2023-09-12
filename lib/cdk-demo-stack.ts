@@ -10,8 +10,12 @@ import * as path from 'path';
 import { BlockPublicAccess, BucketAccessControl } from 'aws-cdk-lib/aws-s3';
 import { OriginAccessIdentity } from 'aws-cdk-lib/aws-cloudfront';
 
+interface CdkDemoStackProps extends cdk.StackProps {
+  envName: string;
+}
+
 export class CdkDemoStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props?: CdkDemoStackProps) {
     super(scope, id, props);
 
     const bucket = new s3.Bucket(this, 'CdkDemoBucket', {
@@ -97,25 +101,25 @@ export class CdkDemoStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'CdkDemoBucketOutput', {
       value: bucket.bucketName,
       description: 'The name of an S3 bucket',
-      exportName: 'CdkDemoBucketName',
+      exportName: `CdkDemoBucketName${props?.envName}`,
     });
 
     new cdk.CfnOutput(this, 'CdkDemoHttpApiOutput', {
       value: httpApi.url!,
       description: 'Demo HTTP API Endpoint',
-      exportName: 'CdkDemoHttpApiUrl',
+      exportName: `CdkDemoHttpApiEndpoint${props?.envName}`,
     });
 
     new cdk.CfnOutput(this, 'CdkDemoWebsiteBucketOutput', {
       value: websiteBucket.bucketName,
       description: 'The name of the website bucket',
-      exportName: 'CdkDemoWebsiteBucketName',
+      exportName: `CdkDemoWebsiteBucketName${props?.envName}`,
     });
 
     new cdk.CfnOutput(this, 'CdkDemoCloudFrontDistOutput', {
       value: cloudFrontDist.distributionDomainName,
       description: 'The domain name of the CloudFront distribution',
-      exportName: 'CdkDemoCloudFrontDistDomainName',
+      exportName: `CdkDemoCloudFrontDistDomainName${props?.envName}`,
     });
 
   }
