@@ -8,6 +8,7 @@ import * as apiGatewayV2 from '@aws-cdk/aws-apigatewayv2-alpha'
 import * as apiGatewayV2Integrations from '@aws-cdk/aws-apigatewayv2-integrations-alpha'
 import * as path from 'path';
 import { BlockPublicAccess, BucketAccessControl } from 'aws-cdk-lib/aws-s3';
+import { OriginAccessIdentity } from 'aws-cdk-lib/aws-cloudfront';
 
 export class CdkDemoStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -22,9 +23,14 @@ export class CdkDemoStack extends cdk.Stack {
     const websiteBucket = new s3.Bucket(this, 'CdkDemoWebsiteBucket', {
       websiteIndexDocument: 'index.html',
       publicReadAccess: true,
-      blockPublicAccess: BlockPublicAccess.BLOCK_ACLS,
-      accessControl: BucketAccessControl.BUCKET_OWNER_FULL_CONTROL
+      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
     });
+
+    const oia = new OriginAccessIdentity(this, 'CdkDemoOriginAccessIdentity', {
+      comment: 'Allows CloudFront to reach the website bucket',
+    });
+
+    websiteBucket.grantRead(oia);
 
     new BucketDeployment(this, 'CdkDemoWebsiteBucketDeployment', {
       sources: [ Source.asset(path.join(__dirname, '..', 'demo-app', 'build')) ],
@@ -48,6 +54,7 @@ export class CdkDemoStack extends cdk.Stack {
         {
           s3OriginSource: {
             s3BucketSource: websiteBucket,
+            originAccessIdentity: oia,
           },
           behaviors: [ { isDefaultBehavior: true } ],
         },
